@@ -1,6 +1,10 @@
 import React, { Component } from "react";
 import Modal from "./components/Modal";
 import axios from 'axios';  
+import authService from "./services/authService";
+import Register from "./components/Register";
+import Login from "./components/Login";
+import Logout from "./components/Logout";
 
 class App extends Component {
   constructor(props) {
@@ -12,14 +16,22 @@ class App extends Component {
         description: "",
         completed: false
       },
-      taskList: []
+      taskList: [],
+      user: null,
     };
   }
 
   // Add componentDidMount()
-  componentDidMount() {
-    this.refreshList();
+  //componentDidMount() {
+   // this.refreshList();
+ // }
+
+ componentDidMount() {
+  const user = authService.getCurrentUser();
+  if (user) {
+    this.setState({ user }, this.refreshList);
   }
+}
 
  
   refreshList = () => {
@@ -36,6 +48,52 @@ class App extends Component {
     }
     return this.setState({ viewCompleted: false });
   };
+
+  //register, login, logout
+  /*handleRegister = (username, email, password) => {
+    authService.register(username, email, password).then(() => {
+      this.handleLogin(username, password);
+    });
+  };*/
+  handleRegister = (username, email, password) => {
+    this.handleLogin(username, password);
+  };
+  /*handleRegister = (username, email, password) => {
+    console.log('Registration successful:', { username, email, password });
+    this.handleLogin(username, password);
+  };*/
+
+
+   handleLogin = (username, password) => {
+    authService.login(username, password).then(user => {
+      this.setState({ user }, this.refreshList);
+    });
+  };
+
+  
+
+
+  // handleLogin = (username, password) => {
+  //   console.log(`Logging in with: {username: '${username}', password: '${password}'}`);
+  //   authService.login(username, password).then(user => {
+  //     this.setState({ user }, this.refreshList);
+  //   }).catch(error => {
+  //     if (error.response && error.response.status === 401) {
+  //       alert('Login failed: Invalid username or password');
+  //     } else {
+  //       alert('An error occurred during login. Please try again later.');
+  //     }
+  //     console.error('Login error details:', error.response ? error.response.data : error.message);
+  //   });
+  // };
+   handleLogout = () => {
+      authService.logout();
+      this.setState({ user: null });
+     };
+
+  //end of register, login, logout
+
+  
 
 
   renderTabList = () => {
@@ -143,12 +201,25 @@ class App extends Component {
 
   // -I- Start by visual effects to viewer
   render() {
+    const { user } = this.state;
+
     return (
       <main className="content">
         <h1 className="text-black text-uppercase text-center my-4">Task Manager</h1>
+        {!user ? (
+           <div className="row">
+           <div className="col-md-6 col-sm-10 mx-auto p-0">
+             <div className="card p-3">
+               <Register onRegister={this.handleRegister} />
+               <Login onLogin={this.handleLogin} />
+             </div>
+           </div>
+         </div>
+       ) : (
         <div className="row ">
           <div className="col-md-6 col-sm-10 mx-auto p-0">
             <div className="card p-3">
+          
               <div className="">
                 <button onClick={this.createItem} className="btn btn-primary">
                   Add task
@@ -159,8 +230,10 @@ class App extends Component {
                 {this.renderItems()}
               </ul>
             </div>
+            <Logout onLogout={this.handleLogout} />
           </div>
         </div>
+         )}
         {this.state.modal ? (
           <Modal
             activeItem={this.state.activeItem}
@@ -172,4 +245,6 @@ class App extends Component {
     );
   }
 }
+
+
 export default App;
